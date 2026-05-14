@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- Si servís el HTML en otro dominio que el backend de la ruleta, descomentá y pone la URL base (sin barra final):
+<meta name="vr-ruleta-api" content="https://tu-backend.com">
+-->
+<title>VinyaRoots — Parcelas de Viñedo en Mendoza</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Raleway:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/lightbox.css">
+<link rel="stylesheet" href="assets/wheel-popup.css">
+<style>
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+:root{
+  --cream:#F5F0E8;--deep-wine:#3D1010;--wine:#6B1A1A;
+  --wine-mid:#8B2E2E;--gold:#C9A84C;--gold-light:#E2C97E;
+  --dark:#100606;--text-mid:#C4B49A;--text-dim:rgba(196,180,154,0.5);
+}
+html{scroll-behavior:smooth}
+body{background:var(--dark);color:var(--cream);font-family:'Raleway',sans-serif;font-weight:300;overflow-x:hidden;text-align:center}
+#bgCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+
+/* NAV */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  padding:22px clamp(18px,5vw,60px);
+  display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:clamp(12px,3vw,24px);
+  transition:background .4s,padding .3s;
+  background:linear-gradient(to bottom,rgba(16,6,6,.96) 0%,transparent 100%);
+  text-align:center;
+}
+nav.scrolled{background:rgba(10,3,3,.97);padding:13px clamp(18px,5vw,60px)}
+.nav-logo{display:inline-flex;align-items:center;gap:11px;text-decoration:none;justify-content:center}
+.nav-logo-mark{
+  flex-shrink:0;width:42px;height:42px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,rgba(245,240,232,.96) 0%,rgba(228,218,200,.9) 100%);
+  box-shadow:0 0 0 1px rgba(201,168,76,.32),inset 0 1px 0 rgba(255,255,255,.35);
+}
+.nav-logo-img{display:block;width:26px;height:auto;object-fit:contain}
+.nav-logo-text{font-family:'Cormorant Garamond',serif;font-size:clamp(1.15rem,3vw,1.55rem);font-weight:500;color:var(--cream);letter-spacing:.06em}
+.nav-links{display:flex;gap:clamp(18px,3vw,38px);list-style:none;justify-content:center;flex-wrap:wrap;margin:0;padding:0}
+.nav-links a{color:var(--text-mid);text-decoration:none;font-size:.68rem;letter-spacing:.2em;text-transform:uppercase;font-weight:500;transition:color .3s}
+.nav-links a:hover{color:var(--gold)}
+.nav-cta{
+  background:transparent;border:1px solid var(--gold);color:var(--gold);
+  padding:9px clamp(14px,2vw,26px);text-decoration:none;
+  font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;transition:all .3s;white-space:nowrap;
+}
+.nav-cta:hover{background:var(--gold);color:var(--dark)}
+@media(max-width:680px){.nav-links{display:none}}
+
+/* HERO */
+.hero{
+  position:relative;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:110px clamp(18px,5vw,60px) 80px;overflow:hidden;
+}
+.hero-content{position:relative;z-index:2;max-width:880px;margin:0 auto;animation:fadeUp 1.7s cubic-bezier(.16,1,.3,1) forwards}
+@keyframes fadeUp{from{opacity:0;transform:translateY(48px)}to{opacity:1;transform:translateY(0)}}
+.hero-eyebrow{
+  font-size:.66rem;letter-spacing:.45em;text-transform:uppercase;
+  color:var(--gold);font-weight:600;margin-bottom:26px;
+  display:flex;align-items:center;justify-content:center;gap:16px;
+}
+.hero-eyebrow::before,.hero-eyebrow::after{content:'';display:block;width:clamp(22px,4vw,42px);height:1px;background:var(--gold);opacity:.58}
+.hero-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2.8rem,10vw,8.5rem);font-weight:300;line-height:.88;
+  color:var(--cream);letter-spacing:-.02em;
+}
+.hero-title em{font-style:italic;color:var(--gold-light);display:block}
+.hero-sub{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(.92rem,2.2vw,1.42rem);font-weight:300;font-style:italic;
+  color:var(--text-mid);margin:28px auto 46px;max-width:460px;line-height:1.65;
+}
+.hero-ctas{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn-gold{
+  display:inline-flex;align-items:center;gap:9px;
+  background:var(--gold);color:var(--dark);
+  padding:clamp(11px,2vw,16px) clamp(22px,4vw,42px);
+  text-decoration:none;font-size:.71rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;transition:background .35s;
+}
+.btn-gold:hover{background:var(--gold-light)}
+.btn-outline{
+  display:inline-flex;align-items:center;gap:9px;
+  border:1px solid rgba(201,168,76,.38);color:var(--gold-light);
+  padding:clamp(11px,2vw,16px) clamp(22px,4vw,42px);
+  text-decoration:none;font-size:.71rem;letter-spacing:.2em;text-transform:uppercase;font-weight:500;transition:all .35s;
+}
+.btn-outline:hover{border-color:var(--gold);background:rgba(201,168,76,.07)}
+.scroll-hint{
+  position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  color:var(--text-dim);font-size:.58rem;letter-spacing:.3em;text-transform:uppercase;
+  animation:bob 2.3s ease-in-out infinite;
+}
+@keyframes bob{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(9px)}}
+.scroll-line{width:1px;height:42px;background:linear-gradient(to bottom,var(--gold),transparent)}
+
+/* STATS */
+.stats{
+  position:relative;z-index:2;
+  background:var(--wine);
+  padding:clamp(30px,5vw,54px) clamp(18px,5vw,60px);
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:clamp(22px,4vw,38px);
+}
+.stat{text-align:center}
+.stat-n{font-family:'Cormorant Garamond',serif;font-size:clamp(2.2rem,5vw,3.8rem);font-weight:300;color:var(--gold);line-height:1}
+.stat-l{font-size:.6rem;letter-spacing:.22em;text-transform:uppercase;color:rgba(245,240,232,.5);margin-top:9px;font-weight:500}
+
+/* SECTIONS */
+.section{position:relative;z-index:2;padding:clamp(64px,10vw,124px) clamp(18px,5vw,60px)}
+.sec-label{
+  font-size:.6rem;letter-spacing:.38em;text-transform:uppercase;
+  color:var(--gold);font-weight:600;margin-bottom:16px;
+  display:flex;align-items:center;justify-content:center;gap:11px;
+}
+.sec-label.center{justify-content:center}
+.sec-label::before,.sec-label::after{content:'';display:block;width:clamp(18px,4vw,32px);height:1px;background:var(--gold);flex-shrink:0}
+.sec-title{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(2rem,5vw,4.3rem);font-weight:300;line-height:1.05;
+  color:var(--cream);margin-bottom:26px;text-align:center;
+}
+.sec-title em{font-style:italic;color:var(--gold-light)}
+.sec-title.center{text-align:center}
+.sec-body{color:var(--text-mid);line-height:1.95;font-size:clamp(.86rem,1.5vw,.98rem);font-weight:300;margin-bottom:16px;max-width:720px;margin-left:auto;margin-right:auto}
+
+/* CONCEPT */
+.concept-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(38px,7vw,100px);align-items:center;max-width:1180px;margin:0 auto}
+@media(max-width:780px){.concept-grid{grid-template-columns:1fr}}
+.badges{display:flex;gap:clamp(14px,3vw,26px);flex-wrap:wrap;margin-top:34px;justify-content:center}
+.badge{border-top:1px solid rgba(201,168,76,.28);padding:14px 14px 0;text-align:center;min-width:0;max-width:200px}
+.badge-icon{color:var(--gold);margin:0 auto 5px;display:flex;justify-content:center}
+.badge-lbl{font-size:.6rem;color:var(--text-dim);letter-spacing:.12em;text-transform:uppercase;margin-top:3px}
+.concept-visual{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:3/4;max-width:390px;margin:0 auto;width:100%}
+.concept-visual-bg{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse at 40% 45%,rgba(107,26,26,.48),transparent 65%),
+             linear-gradient(135deg,#280e0e 0%,#160707 50%,#320c0c 100%);
+  border:1px solid rgba(201,168,76,.1);
+}
+.concept-tag{
+  position:absolute;bottom:26px;right:-16px;
+  background:var(--gold);color:var(--dark);
+  padding:13px 18px;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700;
+  writing-mode:vertical-rl;
+}
+@media(max-width:780px){.concept-tag{right:0}}
+
+/* PLANS */
+.plans-bg{
+  position:relative;z-index:2;
+  background:linear-gradient(180deg,var(--dark) 0%,#0a0202 50%,var(--dark) 100%);
+  padding:clamp(64px,10vw,124px) clamp(18px,5vw,60px);
+}
+.plans-header{text-align:center;margin-bottom:clamp(44px,7vw,78px)}
+.gold-line{display:block;width:48px;height:1px;background:var(--gold);margin:0 auto 46px;opacity:.52}
+.plans-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:22px;max-width:940px;margin:0 auto}
+.plan{
+  border:1px solid rgba(201,168,76,.16);
+  padding:clamp(32px,5vw,58px) clamp(26px,4vw,48px);
+  position:relative;overflow:hidden;background:rgba(18,6,6,.78);
+  transition:transform .45s cubic-bezier(.16,1,.3,1),border-color .4s;backdrop-filter:blur(8px);
+  text-align:center;
+}
+.plan::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,.05) 0%,transparent 55%);opacity:0;transition:opacity .4s}
+.plan:hover{transform:translateY(-8px);border-color:rgba(201,168,76,.42)}
+.plan:hover::before{opacity:1}
+.plan.featured{
+  border-color:rgba(201,168,76,.4);
+  background:linear-gradient(135deg,rgba(107,26,26,.26) 0%,rgba(18,6,6,.88) 100%);
+  padding-top:clamp(44px,6vw,52px);
+}
+.plan.featured::after{
+  content:'MÁS POPULAR';position:absolute;top:16px;left:50%;transform:translateX(-50%);right:auto;
+  background:var(--gold);color:var(--dark);font-size:.5rem;letter-spacing:.22em;padding:4px 11px;font-weight:700;
+}
+.plan-icon-wrap{
+  width:50px;height:50px;border:1px solid rgba(201,168,76,.22);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 26px;color:var(--gold);
+}
+.plan-name{font-family:'Cormorant Garamond',serif;font-size:clamp(1.5rem,3vw,2rem);font-weight:400;color:var(--cream);margin-bottom:5px}
+.plan-tag{font-size:.68rem;color:var(--text-dim);letter-spacing:.09em;margin-bottom:32px}
+.plan-amount{font-family:'Cormorant Garamond',serif;font-size:clamp(2.6rem,5vw,3.6rem);font-weight:300;color:var(--gold);line-height:1}
+.plan-curr{font-size:1.3rem;vertical-align:super}
+.plan-period{font-size:.62rem;color:var(--text-dim);letter-spacing:.14em;text-transform:uppercase;margin-top:7px;margin-bottom:32px}
+.plan-divider{width:36px;height:1px;background:var(--gold);opacity:.32;margin:26px auto}
+.plan-features{list-style:none;margin:0 auto 32px;padding:0;max-width:520px}
+.plan-features li{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--text-mid);font-size:.86rem;margin-bottom:12px;line-height:1.55;text-align:center;flex-wrap:wrap}
+.plan-features li svg{flex-shrink:0;color:var(--gold)}
+.plan-cta{
+  display:block;text-align:center;text-decoration:none;padding:14px;
+  border:1px solid var(--gold);color:var(--gold);
+  font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;font-weight:600;transition:all .35s;
+}
+.plan-cta:hover{background:var(--gold);color:var(--dark)}
+.plan.featured .plan-cta{background:var(--gold);color:var(--dark)}
+.plan.featured .plan-cta:hover{background:var(--gold-light)}
+
+/* PROCESS */
+.process-section{
+  position:relative;z-index:2;padding:clamp(64px,10vw,124px) clamp(18px,5vw,60px);
+  background:linear-gradient(180deg,var(--dark) 0%,rgba(61,16,16,.1) 50%,var(--dark) 100%);
+}
+.process-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));
+  max-width:1080px;margin:clamp(38px,6vw,78px) auto 0;position:relative;
+}
+.process-grid::before{
+  content:'';position:absolute;top:26px;left:12%;right:12%;height:1px;
+  background:linear-gradient(90deg,transparent,var(--gold),var(--gold),transparent);opacity:.2;
+}
+@media(max-width:680px){.process-grid::before{display:none}}
+.step{text-align:center;padding:0 clamp(10px,3vw,26px)}
+.step-num{
+  width:52px;height:52px;border:1px solid var(--gold);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 24px;
+  font-family:'Cormorant Garamond',serif;font-size:1.35rem;color:var(--gold);
+  background:var(--dark);position:relative;z-index:1;transition:background .35s,color .35s;
+}
+.step:hover .step-num{background:var(--gold);color:var(--dark)}
+.step-title{font-family:'Cormorant Garamond',serif;font-size:clamp(1.15rem,2.5vw,1.45rem);color:var(--cream);margin-bottom:11px}
+.step-body{font-size:.82rem;color:var(--text-mid);line-height:1.82}
+
+/* MENDOZA */
+.mendoza{
+  position:relative;z-index:2;
+  padding:clamp(64px,10vw,124px) clamp(18px,5vw,60px);
+  background:linear-gradient(135deg,rgba(107,26,26,.52) 0%,rgba(24,9,9,.96) 60%,var(--dark) 100%);
+  text-align:center;overflow:hidden;
+}
+.mendoza-inner{max-width:740px;margin:0 auto;position:relative;z-index:1}
+.mendoza-quote{
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(1.5rem,4vw,2.8rem);font-weight:300;font-style:italic;
+  color:var(--cream);line-height:1.38;margin-bottom:26px;
+}
+.mendoza-quote strong{color:var(--gold-light);font-style:normal;font-weight:400}
+.mendoza-attr{font-size:.62rem;letter-spacing:.3em;text-transform:uppercase;color:rgba(245,240,232,.38)}
+
+/* PILARES / descubrí (enlaces a páginas de detalle) */
+.pilares-section{position:relative;z-index:2;padding:clamp(64px,10vw,124px) clamp(18px,5vw,60px);text-align:center}
+.pilares-grid{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:clamp(16px,2.5vw,22px);
+  max-width:1040px;margin:0 auto clamp(28px,4vw,44px);text-align:center;
+}
+.pilar-card{
+  display:block;text-decoration:none;color:inherit;text-align:center;
+  border:1px solid rgba(201,168,76,.18);background:rgba(18,6,6,.78);
+  padding:clamp(24px,4vw,38px) clamp(18px,3vw,26px);
+  transition:transform .4s cubic-bezier(.16,1,.3,1),border-color .35s,box-shadow .35s;
+  position:relative;overflow:hidden;
+}
+.pilar-card::before{
+  content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(201,168,76,.06) 0%,transparent 55%);
+  opacity:0;transition:opacity .35s;pointer-events:none;
+}
+.pilar-card:hover{transform:translateY(-8px);border-color:rgba(201,168,76,.42);box-shadow:0 18px 40px rgba(0,0,0,.35)}
+.pilar-card:hover::before{opacity:1}
+.pilar-card h3{
+  font-family:'Cormorant Garamond',serif;font-size:clamp(1.35rem,3vw,1.75rem);font-weight:400;
+  color:var(--cream);margin-bottom:12px;letter-spacing:.02em;
+}
+.pilar-excerpt{
+  font-size:.82rem;color:var(--text-mid);line-height:1.78;margin:0 auto;max-width:42ch;text-align:center;
+}
+.pilar-more{
+  display:inline-block;margin-top:20px;font-size:.58rem;letter-spacing:.22em;text-transform:uppercase;
+  color:var(--gold);font-weight:700;border-bottom:1px solid rgba(201,168,76,.35);padding-bottom:3px;
+}
+.pilares-foot{margin-top:8px}
+.pilares-foot a{
+  display:inline-flex;align-items:center;gap:8px;color:var(--gold);text-decoration:none;
+  font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;font-weight:600;
+  border-bottom:1px solid rgba(201,168,76,.25);padding-bottom:3px;transition:color .3s;
+}
+.pilares-foot a:hover{color:var(--gold-light)}
+
+/* MÓDULOS — galería habitacional */
+.modulos-section{
+  position:relative;z-index:2;
+  padding:clamp(56px,9vw,100px) clamp(18px,5vw,60px);
+  background:linear-gradient(180deg,var(--dark) 0%,#0c0404 48%,var(--dark) 100%);
+  text-align:center;
+}
+.modulos-grid{margin:clamp(26px,5vw,42px) auto 0}
+
+/* CONTACT */
+.contact{
+  position:relative;z-index:2;
+  padding:clamp(64px,10vw,124px) clamp(18px,5vw,60px);
+  background:linear-gradient(180deg,var(--dark) 0%,#060101 100%);text-align:center;
+}
+.contact-inner{max-width:660px;margin:0 auto;text-align:center}
+.contact-cta-wrap{display:flex;justify-content:center;flex-wrap:wrap}
+.wa-btn{
+  display:inline-flex;align-items:center;gap:13px;
+  background:#25D366;color:#fff;
+  padding:clamp(15px,2.5vw,21px) clamp(30px,5vw,62px);
+  text-decoration:none;font-size:clamp(.72rem,1.5vw,.86rem);letter-spacing:.15em;text-transform:uppercase;font-weight:700;
+  transition:background .35s;margin-top:38px;
+}
+.wa-btn:hover{background:#20ba5a}
+.contact-also{margin-top:26px;font-size:.76rem;color:var(--text-mid)}
+.contact-also a{color:var(--gold);text-decoration:none}
+.contact-also a:hover{text-decoration:underline}
+
+/* FOOTER */
+footer{
+  position:relative;z-index:2;
+  padding:clamp(20px,3vw,36px) clamp(18px,5vw,60px);
+  border-top:1px solid rgba(201,168,76,.09);
+  background:#050101;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;flex-wrap:wrap;gap:14px;text-align:center;
+}
+.footer-logo{display:flex;align-items:center;justify-content:center;gap:10px;font-family:'Cormorant Garamond',serif;font-size:1.1rem;color:var(--text-mid);letter-spacing:.1em}
+.footer-logo-mark{
+  flex-shrink:0;width:34px;height:34px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(160deg,rgba(245,240,232,.14) 0%,rgba(228,218,200,.1) 100%);
+  box-shadow:0 0 0 1px rgba(201,168,76,.22);
+}
+.footer-logo-img{display:block;width:21px;height:auto;object-fit:contain;filter:brightness(0)invert(1)opacity(.82)}
+.footer-copy{font-size:.58rem;color:rgba(196,180,154,.3);letter-spacing:.12em;text-align:center}
+.footer-ig a{color:var(--gold);text-decoration:none;font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;border-bottom:1px solid rgba(201,168,76,.22);padding-bottom:2px;transition:color .3s}
+.footer-ig a:hover{color:var(--gold-light)}
+
+/* REVEAL */
+.reveal{opacity:0;transform:translateY(36px);transition:opacity .8s cubic-bezier(.16,1,.3,1),transform .8s cubic-bezier(.16,1,.3,1)}
+.reveal.visible{opacity:1;transform:translateY(0)}
+.d1{transition-delay:.13s}.d2{transition-delay:.26s}.d3{transition-delay:.39s}.d4{transition-delay:.52s}
+</style>
+</head>
+<body>
+<canvas id="bgCanvas"></canvas>
+
+<div id="vr-launch-overlay" aria-hidden="true">
+  <div class="vr-launch-dialog" role="dialog" aria-modal="true" aria-labelledby="vr-launch-title">
+    <div id="vr-step-email">
+      <h2 id="vr-launch-title">Bienvenido a VinyaRoots</h2>
+      <p class="vr-lead">Ingresá tu email y girá la ruleta por un premio.</p>
+      <form id="vr-email-form" novalidate>
+        <div class="vr-email-row">
+          <label for="vr-email-input" class="sr-only">Email</label>
+          <input id="vr-email-input" type="email" name="email" autocomplete="email" placeholder="tu@email.com" required>
+        </div>
+        <div class="vr-terms-wrap">
+          <div class="vr-terms-row">
+            <label class="vr-terms-check" for="vr-terms-checkbox">
+              <input type="checkbox" id="vr-terms-checkbox" name="terms" value="1" autocomplete="off">
+              <span>He leído y acepto los términos y condiciones para participar en la ruleta.</span>
+            </label>
+            <button type="button" class="vr-terms-read-link" id="vr-terms-toggle" aria-expanded="false" aria-controls="vr-terms-panel">Leer términos y condiciones</button>
+          </div>
+          <div id="vr-terms-panel" class="vr-terms-scroll vr-terms-panel" role="region" aria-label="Términos y condiciones completos" hidden>
+            <p class="vr-terms-text">Premios válidos exclusivamente para nuevas contrataciones de parcelas Viña Roots. Las parcelas se otorgan mediante derecho real de superficie por diez (10) años; vencido ese plazo el dominio de la parcela revierte a Viña Roots, conforme al contrato. Los bonos de descuento y beneficios no son acumulables entre sí ni combinables con otras promociones. Máximo un (1) bono de descuento aplicable por parcela de USD 11.800. Financiación disponible hasta en 12 cuotas fijas.</p>
+            <p class="vr-terms-text">Solo para mayores de 18 años. Un (1) giro por correo electrónico. Los premios no son transferibles ni canjeables por dinero en efectivo, salvo lo expresamente indicado para cada bono. Los cupones o códigos enviados por correo electrónico son únicos, intransferibles y tienen vigencia de dos (2) meses desde su emisión. Las experiencias en stand (copa extra, charla con el dueño) y la visita a finca están sujetas a disponibilidad, fechas del evento y coordinación con el equipo. Para hacer efectivo cualquier premio debés concretar la contratación con un asesor y en los plazos que se te informen. Los montos de cuotas mensuales mencionados en los mensajes de premio son referenciales; prevalece lo acordado por escrito en la propuesta comercial y contrato. Viña Roots puede modificar o finalizar esta mecánica; rigen los términos vigentes al momento de participar.</p>
+          </div>
+        </div>
+        <p id="vr-email-err" class="vr-launch-err" aria-live="polite"></p>
+        <button type="submit" id="vr-email-submit">Ir a la ruleta</button>
+      </form>
+    </div>
+    <div id="vr-step-wheel" hidden>
+      <h2 class="vr-launch-title-wheel" style="font-family:'Cormorant Garamond',serif;font-weight:400;font-size:1.35rem;color:#F5F0E8;margin-bottom:6px">Tu premio</h2>
+      <p class="vr-lead" style="margin-bottom:12px;font-size:.78rem">Girá la ruleta: el resultado es al azar.</p>
+      <div class="vr-wheel-wrap">
+        <div class="vr-wheel-pointer" aria-hidden="true"></div>
+        <div id="vr-wheel-rotor">
+          <canvas id="vr-wheel-canvas" width="280" height="280"></canvas>
+        </div>
+      </div>
+      <button type="button" id="vr-spin-btn">Girar ruleta</button>
+      <p id="vr-wheel-result"></p>
+      <button type="button" id="vr-launch-close">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- NAV -->
+<nav id="nav">
+  <a href="#" class="nav-logo">
+    <span class="nav-logo-mark"><img class="nav-logo-img" src="assets/logo-vr.png" width="120" height="120" alt="VinyaRoots"></span>
+    <span class="nav-logo-text">VinyaRoots</span>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#descubri">La finca</a></li>
+    <li><a href="#planes">Planes</a></li>
+    <li><a href="#modulos">Módulos</a></li>
+    <li><a href="#proceso">Proceso</a></li>
+    <li><a href="#contacto">Contacto</a></li>
+  </ul>
+  <a href="https://wa.me/5491126797094" class="nav-cta" target="_blank">Consultar</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-content">
+    <div class="hero-eyebrow">Mendoza, Argentina</div>
+    <h1 class="hero-title">Posee tu<br><em>propio viñedo</em></h1>
+    <p class="hero-sub">80 botellas de vino premium al año, directo de tu parcela en la tierra del Malbec</p>
+    <div class="hero-ctas">
+      <a href="https://wa.me/5491126797094?text=Hola!%20Vi%20VinyaRoots%20y%20me%20interesa%20saber%20más%20sobre%20las%20parcelas." class="btn-gold" target="_blank">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Quiero mi parcela
+      </a>
+      <a href="#planes" class="btn-outline">Ver planes</a>
+    </div>
+  </div>
+  <div class="scroll-hint">
+    <div class="scroll-line"></div>
+    Descubrí
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats">
+  <div class="stat reveal">
+    <div class="stat-n"><span class="count" data-target="80">0</span></div>
+    <div class="stat-l">Botellas de vino al año</div>
+  </div>
+  <div class="stat reveal d1">
+    <div class="stat-n">100%</div>
+    <div class="stat-l">Vino premium de Mendoza</div>
+  </div>
+  <div class="stat reveal d2">
+    <div class="stat-n">2</div>
+    <div class="stat-l">Opciones de inversión</div>
+  </div>
+  <div class="stat reveal d3">
+    <div class="stat-n">∞</div>
+    <div class="stat-l">Experiencias únicas</div>
+  </div>
+</div>
+
+<!-- CONCEPTO -->
+<section class="section" id="concepto">
+  <div class="concept-grid">
+    <div>
+      <div class="sec-label reveal">El concepto</div>
+      <h2 class="sec-title reveal">Una inversión que <em>se bebe</em></h2>
+      <p class="sec-body reveal">VinyaRoots nació para que cualquier persona pueda tener su propio pedazo de la mejor tierra vitivinícola del mundo — no solo como inversión de valor real, sino como una experiencia que te conecta con Mendoza y con algo verdaderamente especial.</p>
+      <p class="sec-body reveal">Cada parcela produce <strong style="color:var(--gold-light)">80 botellas de vino de calidad</strong> por año, con <strong style="color:var(--gold-light)">vino personalizado</strong>. El esquema es <strong style="color:var(--gold-light)">derecho real de superficie sobre la parcela por 10 años</strong>: durante ese tiempo disfrutás del vino y las visitas; al vencimiento la parcela vuelve a VinyaRoots, según contrato.</p>
+      <div class="badges reveal">
+        <div class="badge">
+          <div class="badge-icon">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 22h8M12 11v11M6 2h12l-2 9a4 4 0 0 1-8 0L6 2z"/></svg>
+          </div>
+          <div class="badge-lbl">Vino propio</div>
+        </div>
+        <div class="badge">
+          <div class="badge-icon">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="1"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+          <div class="badge-lbl">Superficie 10 años</div>
+        </div>
+        <div class="badge">
+          <div class="badge-icon">
+            <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20l5.5-11L12 14l3.5-7L21 20H3z"/></svg>
+          </div>
+          <div class="badge-lbl">Mendoza</div>
+        </div>
+      </div>
+    </div>
+    <div class="concept-visual reveal d1">
+      <div class="concept-visual-bg"></div>
+      <svg width="165" height="350" viewBox="0 0 165 350" fill="none" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="position:relative;z-index:1;opacity:.88">
+        <defs>
+          <linearGradient id="bottleGlass" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#050a08"/>
+            <stop offset="22%" stop-color="#14221c"/>
+            <stop offset="45%" stop-color="#1f3329"/>
+            <stop offset="52%" stop-color="#2a4034"/>
+            <stop offset="60%" stop-color="#1c2e26"/>
+            <stop offset="82%" stop-color="#0f1814"/>
+            <stop offset="100%" stop-color="#040706"/>
+          </linearGradient>
+          <linearGradient id="bottleWine" x1="50%" y1="100%" x2="50%" y2="35%">
+            <stop offset="0%" stop-color="#2a0a0c" stop-opacity="0.55"/>
+            <stop offset="45%" stop-color="#3d1218" stop-opacity="0.35"/>
+            <stop offset="100%" stop-color="#1a0808" stop-opacity="0.08"/>
+          </linearGradient>
+          <linearGradient id="foilShine" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stop-color="#6a5530"/>
+            <stop offset="40%" stop-color="#C9A84C"/>
+            <stop offset="55%" stop-color="#E2C97E"/>
+            <stop offset="100%" stop-color="#7d6638"/>
+          </linearGradient>
+          <!-- Cuello más corto y ancho; hombro en S suave (Burdeos), sin quiebre en diagonal -->
+          <path id="wineBottleShape" d="M82.5 7 L91 9 L97 14 L97 32 L95 36 L95 62 C95 74 104 92 115 108 C118 112 119 116 119 122 L119 258 L119 269 L114 274 L51 274 L46 269 L46 258 L46 122 C46 116 47 112 50 108 C61 92 70 74 70 62 L70 36 L68 32 L68 14 L74 9 L82.5 7 Z"/>
+        </defs>
+        <use href="#wineBottleShape" fill="url(#bottleGlass)" stroke="rgba(201,168,76,0.38)" stroke-width="1.05" stroke-linejoin="round"/>
+        <use href="#wineBottleShape" fill="url(#bottleWine)" stroke="none"/>
+        <!-- Anillo bajo cápsula -->
+        <path d="M66 38 Q82.5 42 99 38" stroke="rgba(201,168,76,0.5)" stroke-width="1" fill="none" stroke-linecap="round"/>
+        <!-- Cápsula -->
+        <path d="M74 9 L82.5 7 L91 9 L97 14 L97 32 L68 32 L68 14 Z" fill="url(#foilShine)" stroke="rgba(201,168,76,0.45)" stroke-width="0.75"/>
+        <path d="M76 12 L82.5 9.5 L89 12" stroke="rgba(255,255,255,0.14)" stroke-width="0.55" fill="none" stroke-linecap="round"/>
+        <!-- Reflejo: franja vertical en cilindro -->
+        <path d="M54 128 L52 256" stroke="rgba(226,201,126,0.11)" stroke-width="3.2" stroke-linecap="round"/>
+        <!-- Etiqueta sobre el cilindro -->
+        <rect x="55" y="162" width="55" height="80" rx="1.5" stroke="rgba(201,168,76,0.42)" stroke-width="0.75" fill="rgba(245,240,232,0.05)"/>
+        <rect x="60" y="168" width="45" height="30" rx="2" fill="rgba(245,240,232,0.94)"/>
+        <image href="assets/logo-vr.png" xlink:href="assets/logo-vr.png" x="63" y="171" width="39" height="24" preserveAspectRatio="xMidYMid meet"/>
+        <line x1="61" y1="206" x2="104" y2="206" stroke="#C9A84C" stroke-width="0.45" opacity="0.35"/>
+        <text x="82.5" y="222" text-anchor="middle" font-family="Arial,sans-serif" font-size="5.8" fill="rgba(201,168,76,0.48)" letter-spacing="0.2em">MENDOZA</text>
+        <!-- Anillos de cuello -->
+        <path d="M72 48 L93 48 M72 56 L93 56" stroke="rgba(201,168,76,0.12)" stroke-width="0.45" stroke-linecap="round"/>
+      </svg>
+      <div class="concept-tag">Vino Premium</div>
+    </div>
+  </div>
+</section>
+
+<!-- PLANES -->
+<section class="plans-bg" id="planes">
+  <div class="plans-header">
+    <div class="sec-label center reveal">Opciones de inversión</div>
+    <h2 class="sec-title center reveal">Elegí tu <em>nivel de inmersión</em></h2>
+    <span class="gold-line reveal"></span>
+  </div>
+  <div class="plans-grid">
+    <div class="plan reveal">
+      <div class="plan-icon-wrap">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 8C8 10 5.9 16.17 3.82 19.34L5.71 21c1-1 2-2 3.5-3C11 16 13 14 17 8z"/><path d="M17 8c0 0-5 1-7 6"/></svg>
+      </div>
+      <div class="plan-name">Parcela Viñedo</div>
+      <div class="plan-tag">Ingresá al mundo del vino propio</div>
+      <div class="plan-amount"><span class="plan-curr">USD </span>11.800</div>
+      <div class="plan-period">Inversión única · Superficie parcela 10 años</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Derecho real de superficie sobre tu parcela de viñedo en Mendoza por 10 años; al término revierte a VinyaRoots</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>80 botellas de vino de calidad por año</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Vino personalizado</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Acceso y visitas al viñedo</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Asesoramiento vitivinícola incluido</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Documentación del derecho real de superficie y condiciones contractuales</li>
+      </ul>
+      <a href="https://wa.me/5491126797094?text=Hola!%20Me%20interesa%20la%20Parcela%20Viñedo%20por%20USD%2011.800." class="plan-cta" target="_blank">Consultar ahora →</a>
+    </div>
+    <div class="plan featured reveal d1">
+      <div class="plan-icon-wrap">
+        <svg width="23" height="23" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      <div class="plan-name">Parcela + Módulo</div>
+      <div class="plan-tag">Inversión en viñedo con renta mensual referencial</div>
+      <div class="plan-amount"><span class="plan-curr">USD </span>90.000</div>
+      <div class="plan-period">Derecho real de superficie 10 años + módulo · Contrato a tu nombre</div>
+      <div class="plan-divider"></div>
+      <ul class="plan-features">
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Parcela con derecho real de superficie por 10 años (luego revierte a VinyaRoots) + módulo; documentación a tu nombre según contrato</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Enfoque inversión: VinyaRoots gestiona el alquiler del módulo; ingreso mensual referencial ~USD 800 (aprox., según mercado y ocupación)</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>80 botellas premium por año de tu parcela, vino personalizado</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Hasta un mes al año podés ir a disfrutar tu casa en el viñedo cuando quieras</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Enoturismo y experiencias en el entorno de Mendoza</li>
+        <li><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Si preferís no alquilar, podés destinar el módulo a uso propio; la propuesta está pensada principalmente para generar renta</li>
+      </ul>
+      <a href="https://wa.me/5491126797094?text=Hola!%20Me%20interesa%20el%20plan%20Parcela%20%2B%20Módulo%20por%20USD%2090.000." class="plan-cta" target="_blank">Quiero este plan →</a>
+    </div>
+  </div>
+</section>
+
+<!-- MÓDULOS: galería (imágenes en assets/modulos-web/) -->
+<section class="modulos-section" id="modulos">
+  <div class="sec-label center reveal">Parcela + módulo</div>
+  <h2 class="sec-title center reveal">Los <em>módulos</em> en el viñedo</h2>
+  <p class="sec-body reveal">Referencia visual del módulo en la finca (San Rafael). El plan parcela + módulo (USD 90.000) está pensado como inversión: la parcela se vincula mediante derecho real de superficie por 10 años y al vencimiento vuelve a VinyaRoots; el contrato y la documentación del esquema quedan a tu nombre. VinyaRoots coordina el alquiler del módulo con un ingreso mensual referencial del orden de ~USD 800, y tenés las botellas de tu parcela y hasta un mes al año para disfrutar. Quien no quiera alquilar puede optar por uso propio, aunque no es el esquema habitual.</p>
+  <div class="modulos-grid img-grid img-grid--24">
+    <div class="mod-thumb-wrap reveal"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 1"><img src="assets/modulos-web/modulo-01.jpeg" alt="Módulo 1" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d1"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 2"><img src="assets/modulos-web/modulo-02.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d2"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 3"><img src="assets/modulos-web/modulo-03.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d3"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 4"><img src="assets/modulos-web/modulo-04.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 5"><img src="assets/modulos-web/modulo-05.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d1"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 6"><img src="assets/modulos-web/modulo-06.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d2"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 7"><img src="assets/modulos-web/modulo-07.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d3"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 8"><img src="assets/modulos-web/modulo-08.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 9"><img src="assets/modulos-web/modulo-09.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d1"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 10"><img src="assets/modulos-web/modulo-10.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d2"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 11"><img src="assets/modulos-web/modulo-11.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d3"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 12"><img src="assets/modulos-web/modulo-12.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 13"><img src="assets/modulos-web/modulo-13.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d1"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 14"><img src="assets/modulos-web/modulo-14.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d2"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 15"><img src="assets/modulos-web/modulo-15.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d3"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 16"><img src="assets/modulos-web/modulo-16.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 17"><img src="assets/modulos-web/modulo-17.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d1"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 18"><img src="assets/modulos-web/modulo-18.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d2"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 19"><img src="assets/modulos-web/modulo-19.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d3"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 20"><img src="assets/modulos-web/modulo-20.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 21"><img src="assets/modulos-web/modulo-21.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d1"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 22"><img src="assets/modulos-web/modulo-22.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d2"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 23"><img src="assets/modulos-web/modulo-23.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+    <div class="mod-thumb-wrap reveal d3"><button type="button" class="lb-thumb" aria-label="Ampliar imagen 24"><img src="assets/modulos-web/modulo-24.jpeg" alt="" loading="lazy" width="600" height="450"></button></div>
+  </div>
+  <p class="sec-body reveal" style="margin-top:32px;margin-bottom:0"><a href="#planes" class="btn-outline" style="display:inline-flex">Ver plan Parcela + Módulo</a></p>
+</section>
+
+<!-- PROCESO -->
+<section class="process-section" id="proceso">
+  <div style="text-align:center">
+    <div class="sec-label center reveal">Así funciona</div>
+    <h2 class="sec-title center reveal">Del interés a tu <em>primera cosecha</em></h2>
+    <span class="gold-line reveal"></span>
+  </div>
+  <div class="process-grid">
+    <div class="step reveal">
+      <div class="step-num">1</div>
+      <div class="step-title">Contacto</div>
+      <div class="step-body">Nos escribís por WhatsApp y te contamos todo sobre las parcelas disponibles y los planes.</div>
+    </div>
+    <div class="step reveal d1">
+      <div class="step-num">2</div>
+      <div class="step-title">Elegís tu parcela</div>
+      <div class="step-body">Seleccionás la parcela y el plan que más se adapta a vos. Te acompañamos en cada paso.</div>
+    </div>
+    <div class="step reveal d2">
+      <div class="step-num">3</div>
+      <div class="step-title">Inversión & escritura</div>
+      <div class="step-body">Formalizamos el contrato: derecho real de superficie sobre la parcela por 10 años a tu nombre (al término revierte a VinyaRoots) y las condiciones del plan elegido. Simple y transparente.</div>
+    </div>
+    <div class="step reveal d3">
+      <div class="step-num">4</div>
+      <div class="step-title">Tu vino llega</div>
+      <div class="step-body">Cada año recibís tus 80 botellas de vino premium personalizado.</div>
+    </div>
+  </div>
+</section>
+
+<!-- MENDOZA -->
+<section class="mendoza" id="mendoza">
+  <div class="mendoza-inner">
+    <div class="sec-label center reveal" style="color:rgba(201,168,76,.72)">El terroir</div>
+    <p class="mendoza-quote reveal">Mendoza produce algunos de los mejores vinos del mundo. Ahora podés tener <strong>tu parcela con derecho real de superficie por 10 años</strong> en esta tierra legendaria y recibir el fruto de ella cada año.</p>
+    <div class="mendoza-attr reveal">— VinyaRoots · Mendoza, Argentina</div>
+    <div style="margin-top:42px" class="reveal">
+      <a href="https://wa.me/5491126797094" class="btn-gold" target="_blank">Hablar con un asesor →</a>
+    </div>
+  </div>
+</section>
+
+<!-- DESCUBRÍ: pilares con enlaces a páginas de detalle -->
+<section class="pilares-section" id="descubri">
+  <div style="text-align:center;margin-bottom:clamp(38px,5vw,54px)">
+    <div class="sec-label center reveal">Descubrí</div>
+    <h2 class="sec-title center reveal" style="font-size:clamp(1.7rem,4vw,3.1rem)">La vida en el <em>viñedo</em></h2>
+  </div>
+  <div class="pilares-grid">
+    <a class="pilar-card reveal" href="vinedo.html">
+      <h3>El viñedo</h3>
+      <p class="pilar-excerpt">Ubicado en San Rafael, Mendoza, entre montañas y el río Atuel, con el agua vital para el desarrollo de la vid.</p>
+      <span class="pilar-more">Ver más</span>
+    </a>
+    <a class="pilar-card reveal d1" href="terroir.html">
+      <h3>El terroir</h3>
+      <p class="pilar-excerpt">Suelo privilegiado con piedra caliza de los períodos Triásico y Jurásico, cuando la región era un mar cálido y poco profundo.</p>
+      <span class="pilar-more">Ver más</span>
+    </a>
+    <a class="pilar-card reveal d2" href="roots.html">
+      <h3>Roots</h3>
+      <p class="pilar-excerpt">Raíces profundas que nos conectan con nuestros sueños, y raíces de vid que arraigan en la tierra cosecha tras cosecha.</p>
+      <span class="pilar-more">Ver más</span>
+    </a>
+    <a class="pilar-card reveal d3" href="mi-malbec.html">
+      <h3>Mi Malbec</h3>
+      <p class="pilar-excerpt">Cada botella refleja suelo, clima y cuidado: perfil aromático, estructura, expresión varietal e identidad en cada copa.</p>
+      <span class="pilar-more">Ver más</span>
+    </a>
+  </div>
+  <div class="pilares-foot reveal">
+    <a href="https://www.instagram.com/vinyaroots/" target="_blank">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+      @vinyaroots en Instagram →
+    </a>
+  </div>
+</section>
+
+<!-- CONTACTO -->
+<section class="contact" id="contacto">
+  <div class="contact-inner">
+    <div class="sec-label center reveal">Hablemos</div>
+    <h2 class="sec-title center reveal" style="font-size:clamp(1.9rem,5vw,4rem)">Tu parcela te está <em>esperando</em></h2>
+    <p class="sec-body reveal" style="max-width:460px;margin-left:auto;margin-right:auto">Tenemos disponibilidad limitada. Escribinos ahora y un asesor te va a contar todo sobre las parcelas, el proceso de compra y cómo vas a recibir tu vino.</p>
+    <div class="reveal contact-cta-wrap">
+      <a href="https://wa.me/5491126797094?text=Hola!%20Vi%20la%20web%20de%20VinyaRoots%20y%20me%20interesa%20saber%20más%20sobre%20las%20parcelas%20de%20viñedo." class="wa-btn" target="_blank">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+        Escribinos al WhatsApp
+      </a>
+    </div>
+    <p class="contact-also reveal">También podés seguirnos en <a href="https://www.instagram.com/vinyaroots/" target="_blank">@vinyaroots</a></p>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">
+    <span class="footer-logo-mark"><img class="footer-logo-img" src="assets/logo-vr.png" width="96" height="96" alt=""></span>
+    <span>VinyaRoots</span>
+  </div>
+  <div class="footer-copy">© 2025 VinyaRoots · Mendoza, Argentina<br>Todos los derechos reservados</div>
+  <div class="footer-ig"><a href="https://www.instagram.com/vinyaroots/" target="_blank">@vinyaroots</a></div>
+</footer>
+
+<script>
+// ── ANIMATED CANVAS BACKGROUND ───────────────────────────────────
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+// Orbs config
+const ORB_DEFS = [
+  {rx:.14,ry:.22,r:340,speed:.00038,phase:0,   h:0},
+  {rx:.84,ry:.68,r:290,speed:.00028,phase:1.9, h:14},
+  {rx:.5, ry:.5, r:210,speed:.00052,phase:3.4, h:28},
+  {rx:.28,ry:.82,r:250,speed:.00033,phase:.85, h:5},
+  {rx:.76,ry:.14,r:185,speed:.00044,phase:2.5, h:20},
+];
+
+// Particles
+let particles = [];
+function makeParticles(){
+  particles = [];
+  const n = Math.min(90, Math.floor(W*H/12000));
+  for(let i=0;i<n;i++) particles.push({
+    x:Math.random()*W, y:Math.random()*H,
+    vx:(Math.random()-.5)*.25, vy:(Math.random()-.5)*.25,
+    r:Math.random()*1.7+.4,
+    alpha:Math.random()*.48+.12,
+    pulse:Math.random()*Math.PI*2
+  });
+}
+
+function resize(){
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+  makeParticles();
+}
+
+function drawOrbs(t){
+  ORB_DEFS.forEach(o=>{
+    const cx = (o.rx + Math.sin(t*o.speed*.7+o.phase)*.09)*W;
+    const cy = (o.ry + Math.cos(t*o.speed  +o.phase)*.08)*H;
+    const pulse = 1 + Math.sin(t*o.speed*2.1+o.phase)*.07;
+    const g = ctx.createRadialGradient(cx,cy,0,cx,cy,o.r*pulse);
+    g.addColorStop(0,  `hsla(${o.h},58%,17%,0.30)`);
+    g.addColorStop(.55,`hsla(${o.h},52%,11%,0.13)`);
+    g.addColorStop(1,  'transparent');
+    ctx.beginPath(); ctx.arc(cx,cy,o.r*pulse,0,Math.PI*2);
+    ctx.fillStyle=g; ctx.fill();
+  });
+}
+
+function drawVineLines(){
+  ctx.save();
+  ctx.strokeStyle='rgba(201,168,76,0.022)';
+  ctx.lineWidth=1;
+  const sp=88;
+  for(let x=-H;x<W+H;x+=sp){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x+H,H); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawSwirl(t){
+  ctx.save();
+  const cx=W*.5, cy=H*.42, maxR=Math.min(W,H)*.36;
+  [0,Math.PI].forEach((arm,i)=>{
+    ctx.beginPath();
+    for(let a=0;a<Math.PI*4;a+=.025){
+      const r=(a/(Math.PI*4))*maxR;
+      const px=cx+r*Math.cos(a+arm+t*.00018);
+      const py=cy+r*Math.sin(a+arm+t*.00018)*.52;
+      a===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+    }
+    ctx.strokeStyle=`rgba(201,168,76,0.018)`;
+    ctx.lineWidth=1; ctx.stroke();
+  });
+  ctx.restore();
+}
+
+function drawParticles(t){
+  particles.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=W; if(p.x>W)p.x=0;
+    if(p.y<0)p.y=H; if(p.y>H)p.y=0;
+    const a=p.alpha*(0.55+0.45*Math.sin(t*.0009+p.pulse));
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(201,168,76,${a})`; ctx.fill();
+  });
+}
+
+function drawConnections(){
+  const mx=125;
+  for(let i=0;i<particles.length;i++){
+    for(let j=i+1;j<particles.length;j++){
+      const dx=particles[i].x-particles[j].x, dy=particles[i].y-particles[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<mx){
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x,particles[i].y);
+        ctx.lineTo(particles[j].x,particles[j].y);
+        ctx.strokeStyle=`rgba(201,168,76,${(1-d/mx)*.055})`;
+        ctx.lineWidth=.5; ctx.stroke();
+      }
+    }
+  }
+}
+
+function animate(t){
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#100606'; ctx.fillRect(0,0,W,H);
+  drawVineLines();
+  drawSwirl(t);
+  drawOrbs(t);
+  drawConnections();
+  drawParticles(t);
+  requestAnimationFrame(animate);
+}
+
+resize();
+window.addEventListener('resize', resize);
+requestAnimationFrame(animate);
+
+// ── NAVBAR ───────────────────────────────────────────────────────
+const nav = document.getElementById('nav');
+window.addEventListener('scroll',()=>nav.classList.toggle('scrolled',scrollY>70));
+
+// ── REVEAL ───────────────────────────────────────────────────────
+const ro = new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible')}),{threshold:.1});
+document.querySelectorAll('.reveal,.step').forEach(el=>ro.observe(el));
+
+// ── COUNT UP ─────────────────────────────────────────────────────
+const co = new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){
+    const target=+e.target.dataset.target; let cur=0;
+    const id=setInterval(()=>{cur+=target/55;if(cur>=target){cur=target;clearInterval(id);}e.target.textContent=Math.floor(cur);},22);
+    co.unobserve(e.target);
+  }
+}),{threshold:.5});
+document.querySelectorAll('.count').forEach(el=>co.observe(el));
+
+// ── SMOOTH SCROLL ────────────────────────────────────────────────
+document.querySelectorAll('a[href^="#"]').forEach(a=>a.addEventListener('click',e=>{
+  e.preventDefault();
+  const t=document.querySelector(a.getAttribute('href'));
+  if(t)t.scrollIntoView({behavior:'smooth'});
+}));
+</script>
+<script src="assets/lightbox.js"></script>
+<script src="assets/wheel-popup.js"></script>
+</body>
+</html>

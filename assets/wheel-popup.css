@@ -1,0 +1,153 @@
+/* Popup bienvenida + ruleta (z-index sobre lightbox) */
+#vr-launch-overlay,
+#vr-launch-overlay *,
+#vr-launch-overlay *::before,
+#vr-launch-overlay *::after{
+  box-sizing:border-box;
+}
+#vr-launch-overlay{
+  position:fixed;inset:0;z-index:12000;
+  display:flex;align-items:center;justify-content:center;
+  padding:max(16px,3vmin);
+  background:rgba(4,1,1,.92);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  opacity:0;visibility:hidden;
+  transition:opacity .45s ease, visibility .45s;
+}
+#vr-launch-overlay.is-visible{
+  opacity:1;visibility:visible;
+}
+.vr-launch-dialog{
+  width:100%;max-width:420px;margin:0 auto;min-width:0;
+  border:1px solid rgba(201,168,76,.35);
+  border-radius:12px;
+  background:linear-gradient(165deg,#1a0c0c 0%,#0d0505 100%);
+  box-shadow:0 28px 80px rgba(0,0,0,.65);
+  padding:clamp(22px,4vw,34px) clamp(18px,4vw,28px);
+  text-align:center;
+  overflow:hidden;
+  transform:translateY(14px);
+  transition:transform .5s cubic-bezier(.16,1,.3,1);
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+}
+#vr-launch-overlay.is-visible .vr-launch-dialog{
+  transform:translateY(0);
+}
+.vr-launch-dialog h2{
+  font-family:'Cormorant Garamond',serif;font-weight:400;
+  font-size:clamp(1.5rem,4vw,1.85rem);color:#F5F0E8;margin-bottom:10px;
+}
+.vr-launch-dialog .vr-lead{
+  font-size:.82rem;color:rgba(196,180,154,.88);line-height:1.65;margin-bottom:22px;
+}
+#vr-email-form{width:100%;max-width:100%}
+.vr-email-row{display:flex;flex-direction:column;gap:12px;width:100%;max-width:100%;min-width:0}
+#vr-email-input{
+  display:block;width:100%;max-width:100%;min-width:0;
+  padding:14px 16px;border-radius:6px;
+  border:1px solid rgba(201,168,76,.28);
+  background:rgba(8,3,3,.9);color:#F5F0E8;font-size:.9rem;font-family:inherit;
+  margin:0;
+}
+#vr-email-input::placeholder{color:rgba(196,180,154,.45)}
+#vr-email-input:focus{
+  outline:none;border-color:rgba(201,168,76,.55);
+  box-shadow:0 0 0 2px rgba(201,168,76,.12);
+}
+.vr-terms-wrap{margin-top:14px;text-align:left}
+.vr-terms-row{
+  display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px 14px;
+  justify-content:space-between;
+}
+.vr-terms-check{
+  display:flex;align-items:flex-start;gap:10px;cursor:pointer;
+  font-size:.74rem;line-height:1.55;color:rgba(245,240,232,.9);text-align:left;
+  flex:1 1 min(100%,220px);min-width:0;margin:0;
+}
+.vr-terms-check input{
+  flex-shrink:0;width:16px;height:16px;margin-top:2px;accent-color:#C9A84C;cursor:pointer;
+}
+.vr-terms-read-link{
+  flex:0 0 auto;align-self:center;
+  padding:2px 0;margin:0;border:none;background:none;cursor:pointer;
+  font-family:inherit;font-size:.72rem;line-height:1.4;font-weight:500;
+  color:#C9A84C;text-decoration:underline;text-underline-offset:2px;text-align:left;
+  white-space:nowrap;
+}
+.vr-terms-read-link:hover{color:#E2C97E}
+.vr-terms-read-link:focus-visible{
+  outline:2px solid rgba(201,168,76,.55);outline-offset:2px;border-radius:2px;
+}
+.vr-terms-panel{margin-top:12px}
+.vr-terms-scroll{
+  max-height:min(28vh,200px);overflow-y:auto;padding:12px 14px;
+  border:1px solid rgba(201,168,76,.2);border-radius:6px;
+  background:rgba(8,3,3,.65);font-size:.72rem;line-height:1.65;color:rgba(196,180,154,.92);
+}
+.vr-terms-text{margin:0 0 .75em}
+.vr-terms-text:last-child{margin-bottom:0}
+.vr-launch-err{
+  color:#e8a0a0;font-size:.74rem;margin-top:8px;min-height:1.2em;text-align:left;
+}
+#vr-email-submit,#vr-spin-btn,#vr-launch-close{
+  display:flex;align-items:center;justify-content:center;
+  width:100%;max-width:100%;min-width:0;
+  padding:14px 20px;border-radius:6px;
+  font-size:.68rem;letter-spacing:.18em;text-transform:uppercase;font-weight:700;
+  font-family:inherit;cursor:pointer;border:none;transition:background .3s, color .3s;
+  box-sizing:border-box;
+}
+#vr-email-submit{
+  background:#C9A84C;color:#100606;margin-top:4px;
+}
+#vr-email-submit:hover{background:#E2C97E}
+#vr-spin-btn{
+  background:transparent;border:1px solid #C9A84C;color:#C9A84C;margin-top:18px;
+}
+#vr-spin-btn:hover:not(:disabled){background:rgba(201,168,76,.12)}
+#vr-spin-btn:disabled{opacity:.45;cursor:not-allowed}
+#vr-launch-close{
+  margin-top:14px;background:transparent;border:1px solid rgba(201,168,76,.22);
+  color:rgba(196,180,154,.75);
+}
+#vr-launch-close:hover{color:#C9A84C;border-color:rgba(201,168,76,.4)}
+.vr-wheel-wrap{
+  position:relative;margin:8px auto 0;width:min(100%,280px);aspect-ratio:1;
+}
+#vr-wheel-rotor{
+  width:100%;height:100%;border-radius:50%;
+  transition:transform 0s linear;
+  transform-origin:center center;
+  filter:drop-shadow(0 8px 24px rgba(0,0,0,.5));
+}
+#vr-wheel-rotor.is-spinning{will-change:transform}
+#vr-wheel-canvas{display:block;width:100%;height:auto;border-radius:50%}
+.vr-wheel-pointer{
+  position:absolute;top:-6px;left:50%;transform:translateX(-50%);
+  width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;
+  border-top:22px solid #C9A84C;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));z-index:2;
+}
+#vr-wheel-result{
+  margin-top:18px;font-family:'Raleway',sans-serif;font-size:.82rem;color:rgba(245,240,232,.92);
+  line-height:1.65;text-align:left;min-height:2.5em;display:none;
+}
+#vr-wheel-result.is-on{display:block}
+#vr-wheel-result .vr-prize-title{
+  font-family:'Cormorant Garamond',serif;font-size:1.05rem;color:#E2C97E;margin:0 0 8px;font-weight:500;text-align:center;
+}
+#vr-wheel-result .vr-prize-message{margin:0 0 10px}
+#vr-wheel-result .vr-prize-hook{
+  margin:0;font-size:.74rem;color:rgba(196,180,154,.88);font-style:italic;border-top:1px solid rgba(201,168,76,.15);padding-top:10px;
+}
+#vr-wheel-result.is-no-prize .vr-prize-title{color:rgba(196,180,154,.92)}
+#vr-wheel-result.is-no-prize .vr-prize-message{color:rgba(210,200,188,.9)}
+#vr-wheel-result.is-no-prize .vr-prize-hook{color:rgba(180,170,160,.75);border-top-color:rgba(201,168,76,.1)}
+.vr-confetti-canvas{
+  position:fixed;inset:0;width:100%;height:100%;
+  pointer-events:none;z-index:12001;
+}
+#vr-step-wheel[hidden],#vr-step-email[hidden]{display:none!important}
+#vr-step-email:not([hidden]){display:block;width:100%;max-width:100%;min-width:0}
+#vr-step-wheel:not([hidden]){display:block;width:100%;max-width:100%;min-width:0}
