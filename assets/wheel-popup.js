@@ -257,17 +257,27 @@
       .toLowerCase();
   }
 
-  /** Vacío = ok. Si hay texto, valida formato suave (AR/internacional). */
-  function parseTelefonoOpcional(raw) {
+  function parseNombre(raw) {
+    var s = String(raw || '')
+      .trim()
+      .replace(/\s+/g, ' ')
+      .slice(0, 80);
+    if (s.length < 2) return { ok: false, error: 'Ingresá tu nombre y apellido.' };
+    if (/[<>\"]/.test(s)) return { ok: false, error: 'El nombre tiene caracteres no permitidos.' };
+    return { ok: true, value: s };
+  }
+
+  /** Teléfono obligatorio: mismo formato que antes pero sin vacío. */
+  function parseTelefonoRequerido(raw) {
     var s = String(raw || '').trim();
-    if (!s) return { ok: true, value: '' };
+    if (!s) return { ok: false, error: 'Ingresá tu teléfono.' };
     if (s.length > 40) return { ok: false, error: 'El teléfono es demasiado largo.' };
     if (!/^[\d+().\s-]+$/.test(s)) {
       return { ok: false, error: 'Teléfono: solo números y símbolos + ( ) - .' };
     }
     var digits = s.replace(/\D/g, '');
     if (digits.length < 6) {
-      return { ok: false, error: 'Si completás teléfono, incluí al menos 6 dígitos.' };
+      return { ok: false, error: 'El teléfono debe tener al menos 6 dígitos.' };
     }
     return { ok: true, value: s };
   }
@@ -299,9 +309,10 @@
     return readJson(STORAGE.testRecords, []);
   }
 
-  function buildParticipacionRecord(email, telefono, ip, prize) {
+  function buildParticipacionRecord(nombre, email, telefono, ip, prize) {
     var titulo = prize.title || prize.label || '';
     var base = {
+      nombre: nombre,
       email: email,
       telefono: telefono || '',
       premioGanado: titulo,
@@ -310,7 +321,7 @@
       premioGancho: prize.hook || '',
       esSinPremio: !!prize.isNoPrize,
       resumenParticipacion:
-        email + (telefono ? ' · ' + telefono : '') + ' — ' + titulo,
+        nombre + ' · ' + email + ' · ' + (telefono || '') + ' — ' + titulo,
       ip: ip || '',
       prizeId: prize.id,
       prizeLabel: titulo,
@@ -349,13 +360,13 @@
     }
   }
 
-  function persistNormal(email, telefono, ip, prize) {
+  function persistNormal(nombre, email, telefono, ip, prize) {
     var emails = getUsedEmails();
     if (emails.indexOf(email) === -1) emails.push(email);
     writeJson(STORAGE.usedEmails, emails);
 
     var rec = getRecords();
-    rec.push(buildParticipacionRecord(email, telefono, ip, prize));
+    rec.push(buildParticipacionRecord(nombre, email, telefono, ip, prize));
     writeJson(STORAGE.records, rec);
 
     try {
@@ -363,9 +374,9 @@
     } catch (e) {}
   }
 
-  function persistTest(email, telefono, ip, prize) {
+  function persistTest(nombre, email, telefono, ip, prize) {
     var rec = getTestRecords();
-    rec.push(buildParticipacionRecord(email, telefono, ip, prize));
+    rec.push(buildParticipacionRecord(nombre, email, telefono, ip, prize));
     writeJson(STORAGE.testRecords, rec);
   }
 
@@ -381,18 +392,19 @@
     return '/api/ruleta-premio';
   }
 
-  function notifyPremioResend(email, telefono, prize, ip, isTest) {
+  function notifyPremioResend(nombre, email, telefono, prize, ip, isTest) {
     if (isTest) return Promise.resolve(null);
     var url = getRuletaPremioUrl();
     var payload = {
+      nombre: nombre,
       email: email,
+      telefono: telefono,
       prizeId: prize.id,
       premioGanado: prize.title || prize.label || '',
       premioMensaje: prize.message || '',
       premioGancho: prize.hook || '',
       ip: ip || ''
     };
-    if (telefono) payload.telefono = telefono;
     return fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -495,6 +507,7 @@
     var stepEmail = document.getElementById('vr-step-email');
     var stepWheel = document.getElementById('vr-step-wheel');
     var form = document.getElementById('vr-email-form');
+    var nameInput = document.getElementById('vr-name-input');
     var input = document.getElementById('vr-email-input');
     var phoneInput = document.getElementById('vr-phone-input');
     var errEl = document.getElementById('vr-email-err');
@@ -536,6 +549,7 @@
     }
 
     var ip = '';
+    var currentNombre = '';
     var currentEmail = '';
     var currentTelefono = '';
     var rotationDeg = 0;
@@ -586,17 +600,23 @@
         errEl.textContent = 'Debés aceptar los términos y condiciones para continuar.';
         return;
       }
+      var nomParsed = parseNombre(nameInput ? nameInput.value : '');
+      if (!nomParsed.ok) {
+        errEl.textContent = nomParsed.error;
+        return;
+      }
       var email = normEmail(input.value);
       if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         errEl.textContent = 'Ingresá un email válido.';
         return;
       }
-      var telParsed = parseTelefonoOpcional(phoneInput ? phoneInput.value : '');
+      var telParsed = parseTelefonoRequerido(phoneInput ? phoneInput.value : '');
       if (!telParsed.ok) {
         errEl.textContent = telParsed.error;
         return;
       }
-      currentTelefono = telParsed.value || '';
+      currentNombre = nomParsed.value;
+      currentTelefono = telParsed.value;
       if (!test) {
         var used = getUsedEmails();
         if (used.indexOf(email) !== -1) {
@@ -651,10 +671,10 @@
         resultEl.classList.add('is-on');
         if (prize.isNoPrize) resultEl.classList.add('is-no-prize');
         launchConfetti(overlay, !!prize.isNoPrize);
-        if (test) persistTest(currentEmail, currentTelefono, ip, prize);
-        else persistNormal(currentEmail, currentTelefono, ip, prize);
+        if (test) persistTest(currentNombre, currentEmail, currentTelefono, ip, prize);
+        else persistNormal(currentNombre, currentEmail, currentTelefono, ip, prize);
         var pzId = prize.id;
-        notifyPremioResend(currentEmail, currentTelefono, prize, ip, test)
+        notifyPremioResend(currentNombre, currentEmail, currentTelefono, prize, ip, test)
           .then(function (j) {
             if (!test && j && j.cupon) {
               patchLastParticipacionRecord(currentEmail, pzId, j.cupon);

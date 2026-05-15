@@ -347,10 +347,12 @@ footer{
       <p class="vr-lead">Ingresa tus datos y gira la ruleta para reclamar tu premio!</p>
       <form id="vr-email-form" novalidate>
         <div class="vr-email-row">
+          <label for="vr-name-input" class="sr-only">Nombre y apellido</label>
+          <input id="vr-name-input" type="text" name="nombre" autocomplete="name" placeholder="Nombre y apellido" maxlength="80" required>
           <label for="vr-email-input" class="sr-only">Email</label>
           <input id="vr-email-input" type="email" name="email" autocomplete="email" placeholder="tu@email.com" required>
-          <label for="vr-phone-input" class="sr-only">Teléfono (opcional)</label>
-          <input id="vr-phone-input" type="tel" name="telefono" autocomplete="tel" inputmode="tel" placeholder="Teléfono (opcional)">
+          <label for="vr-phone-input" class="sr-only">Teléfono</label>
+          <input id="vr-phone-input" type="tel" name="telefono" autocomplete="tel" inputmode="tel" placeholder="Teléfono" required>
         </div>
         <div class="vr-terms-wrap">
           <div class="vr-terms-row">
