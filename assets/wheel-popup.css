@@ -44,15 +44,15 @@
 }
 #vr-email-form{width:100%;max-width:100%}
 .vr-email-row{display:flex;flex-direction:column;gap:12px;width:100%;max-width:100%;min-width:0}
-#vr-email-input{
+#vr-email-input,#vr-phone-input{
   display:block;width:100%;max-width:100%;min-width:0;
   padding:14px 16px;border-radius:6px;
   border:1px solid rgba(201,168,76,.28);
   background:rgba(8,3,3,.9);color:#F5F0E8;font-size:.9rem;font-family:inherit;
   margin:0;
 }
-#vr-email-input::placeholder{color:rgba(196,180,154,.45)}
-#vr-email-input:focus{
+#vr-email-input::placeholder,#vr-phone-input::placeholder{color:rgba(196,180,154,.45)}
+#vr-email-input:focus,#vr-phone-input:focus{
   outline:none;border-color:rgba(201,168,76,.55);
   box-shadow:0 0 0 2px rgba(201,168,76,.12);
 }

@@ -257,6 +257,21 @@
       .toLowerCase();
   }
 
+  /** Vacío = ok. Si hay texto, valida formato suave (AR/internacional). */
+  function parseTelefonoOpcional(raw) {
+    var s = String(raw || '').trim();
+    if (!s) return { ok: true, value: '' };
+    if (s.length > 40) return { ok: false, error: 'El teléfono es demasiado largo.' };
+    if (!/^[\d+().\s-]+$/.test(s)) {
+      return { ok: false, error: 'Teléfono: solo números y símbolos + ( ) - .' };
+    }
+    var digits = s.replace(/\D/g, '');
+    if (digits.length < 6) {
+      return { ok: false, error: 'Si completás teléfono, incluí al menos 6 dígitos.' };
+    }
+    return { ok: true, value: s };
+  }
+
   function randomIndex(n) {
     if (n <= 1) return 0;
     if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
@@ -284,16 +299,18 @@
     return readJson(STORAGE.testRecords, []);
   }
 
-  function buildParticipacionRecord(email, ip, prize) {
+  function buildParticipacionRecord(email, telefono, ip, prize) {
     var titulo = prize.title || prize.label || '';
     var base = {
       email: email,
+      telefono: telefono || '',
       premioGanado: titulo,
       premioId: prize.id,
       premioMensaje: prize.message || '',
       premioGancho: prize.hook || '',
       esSinPremio: !!prize.isNoPrize,
-      resumenParticipacion: email + ' — ' + titulo,
+      resumenParticipacion:
+        email + (telefono ? ' · ' + telefono : '') + ' — ' + titulo,
       ip: ip || '',
       prizeId: prize.id,
       prizeLabel: titulo,
@@ -332,13 +349,13 @@
     }
   }
 
-  function persistNormal(email, ip, prize) {
+  function persistNormal(email, telefono, ip, prize) {
     var emails = getUsedEmails();
     if (emails.indexOf(email) === -1) emails.push(email);
     writeJson(STORAGE.usedEmails, emails);
 
     var rec = getRecords();
-    rec.push(buildParticipacionRecord(email, ip, prize));
+    rec.push(buildParticipacionRecord(email, telefono, ip, prize));
     writeJson(STORAGE.records, rec);
 
     try {
@@ -346,9 +363,9 @@
     } catch (e) {}
   }
 
-  function persistTest(email, ip, prize) {
+  function persistTest(email, telefono, ip, prize) {
     var rec = getTestRecords();
-    rec.push(buildParticipacionRecord(email, ip, prize));
+    rec.push(buildParticipacionRecord(email, telefono, ip, prize));
     writeJson(STORAGE.testRecords, rec);
   }
 
@@ -364,7 +381,7 @@
     return '/api/ruleta-premio';
   }
 
-  function notifyPremioResend(email, prize, ip, isTest) {
+  function notifyPremioResend(email, telefono, prize, ip, isTest) {
     if (isTest) return Promise.resolve(null);
     var url = getRuletaPremioUrl();
     var payload = {
@@ -375,6 +392,7 @@
       premioGancho: prize.hook || '',
       ip: ip || ''
     };
+    if (telefono) payload.telefono = telefono;
     return fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -478,6 +496,7 @@
     var stepWheel = document.getElementById('vr-step-wheel');
     var form = document.getElementById('vr-email-form');
     var input = document.getElementById('vr-email-input');
+    var phoneInput = document.getElementById('vr-phone-input');
     var errEl = document.getElementById('vr-email-err');
     var rotor = document.getElementById('vr-wheel-rotor');
     var canvas = document.getElementById('vr-wheel-canvas');
@@ -504,6 +523,7 @@
 
     var ip = '';
     var currentEmail = '';
+    var currentTelefono = '';
     var rotationDeg = 0;
     var spinning = false;
     var prizes = VR_PRIZES;
@@ -557,6 +577,12 @@
         errEl.textContent = 'Ingresá un email válido.';
         return;
       }
+      var telParsed = parseTelefonoOpcional(phoneInput ? phoneInput.value : '');
+      if (!telParsed.ok) {
+        errEl.textContent = telParsed.error;
+        return;
+      }
+      currentTelefono = telParsed.value || '';
       if (!test) {
         var used = getUsedEmails();
         if (used.indexOf(email) !== -1) {
@@ -610,10 +636,10 @@
         resultEl.classList.add('is-on');
         if (prize.isNoPrize) resultEl.classList.add('is-no-prize');
         launchConfetti(overlay, !!prize.isNoPrize);
-        if (test) persistTest(currentEmail, ip, prize);
-        else persistNormal(currentEmail, ip, prize);
+        if (test) persistTest(currentEmail, currentTelefono, ip, prize);
+        else persistNormal(currentEmail, currentTelefono, ip, prize);
         var pzId = prize.id;
-        notifyPremioResend(currentEmail, prize, ip, test)
+        notifyPremioResend(currentEmail, currentTelefono, prize, ip, test)
           .then(function (j) {
             if (!test && j && j.cupon) {
               patchLastParticipacionRecord(currentEmail, pzId, j.cupon);
