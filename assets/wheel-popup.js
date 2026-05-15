@@ -502,10 +502,24 @@
     var canvas = document.getElementById('vr-wheel-canvas');
     var spinBtn = document.getElementById('vr-spin-btn');
     var resultEl = document.getElementById('vr-wheel-result');
+    var emailNoteEl = document.getElementById('vr-wheel-email-note');
     var closeBtn = document.getElementById('vr-launch-close');
     var termsCheckbox = document.getElementById('vr-terms-checkbox');
     var termsToggle = document.getElementById('vr-terms-toggle');
     var termsPanel = document.getElementById('vr-terms-panel');
+
+    function setWheelEmailNote(msg, isErr) {
+      if (!emailNoteEl) return;
+      if (!msg) {
+        emailNoteEl.textContent = '';
+        emailNoteEl.hidden = true;
+        emailNoteEl.classList.remove('is-err');
+        return;
+      }
+      emailNoteEl.textContent = msg;
+      emailNoteEl.hidden = false;
+      emailNoteEl.classList.toggle('is-err', !!isErr);
+    }
 
     if (!form || !spinBtn || !closeBtn || !stepEmail || !stepWheel) return;
 
@@ -608,6 +622,7 @@
       spinBtn.disabled = true;
       resultEl.classList.remove('is-on', 'is-no-prize');
       resultEl.textContent = '';
+      setWheelEmailNote('', false);
 
       var n = prizes.length;
       var winIndex = randomIndex(n);
@@ -644,13 +659,18 @@
             if (!test && j && j.cupon) {
               patchLastParticipacionRecord(currentEmail, pzId, j.cupon);
             }
+            if (!test && j && j.cuponPersistidoServer === false && j.cupon) {
+              setWheelEmailNote(
+                'El código se envió por email. Para guardar cupones en el servidor enlazá Vercel KV al proyecto.',
+                false
+              );
+            }
           })
           .catch(function (err) {
+            var m = err && err.message ? err.message : String(err);
+            setWheelEmailNote('No se pudo enviar el email: ' + m, true);
             try {
-              console.warn(
-                '[VinyaRoots ruleta] Email Resend:',
-                err && err.message ? err.message : err
-              );
+              console.warn('[VinyaRoots ruleta] Email Resend:', m);
             } catch (e) {}
           });
         spinBtn.textContent = 'Listo';

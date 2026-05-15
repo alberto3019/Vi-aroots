@@ -144,6 +144,11 @@
 #vr-wheel-result.is-no-prize .vr-prize-title{color:rgba(196,180,154,.92)}
 #vr-wheel-result.is-no-prize .vr-prize-message{color:rgba(210,200,188,.9)}
 #vr-wheel-result.is-no-prize .vr-prize-hook{color:rgba(180,170,160,.75);border-top-color:rgba(201,168,76,.1)}
+.vr-wheel-email-note{
+  margin:10px 0 0;font-size:.68rem;line-height:1.5;color:rgba(201,168,120,.95);
+  text-align:center;font-family:'Raleway',sans-serif;
+}
+.vr-wheel-email-note.is-err{color:#e8a0a0}
 .vr-confetti-canvas{
   position:fixed;inset:0;width:100%;height:100%;
   pointer-events:none;z-index:12001;
